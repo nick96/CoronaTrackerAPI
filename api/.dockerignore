@@ -1,4 +1,5 @@
 __pycache__/
-requirements-dev.txt
 Dockerfile
+Dockerfile.test
 docker-compose.yml
+docker-compose.test.yml

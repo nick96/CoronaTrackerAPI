@@ -4,3 +4,6 @@ python-language-server[all]
 # Formaters
 black
 isort
+
+# Testing
+pytest
