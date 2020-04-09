@@ -1,0 +1,4 @@
+__pycache__/
+requirements-dev.txt
+Dockerfile
+docker-compose.yml
