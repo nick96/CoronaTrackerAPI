@@ -1,0 +1,6 @@
+# LSP for autocomplete et al.
+python-language-server[all]
+
+# Formaters
+black
+isort
