@@ -4,6 +4,7 @@ import json
 import os
 
 from sqlalchemy import Column, String, create_engine
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -50,8 +51,19 @@ def create_positive():
         }
         return response, 400
     positive = Positive(key=body["key"])
-    session.add(positive)
-    session.commit()
+    try:
+        session.add(positive)
+        session.commit()
+    except IntegrityError as e:
+        app.logger.info("%s already exists in the databse: %s", body["key"], e)
+        response = {
+            "error": {
+                "code": 400,
+                "title": "IntegrityError",
+                "detail": f"'{body['key']}' has already been submitted",
+            }
+        }
+        return response, 400
     return Response(status=201)
 
 
@@ -76,8 +88,19 @@ def create_contact():
         }
         return jsonify(response), 400
     contact = Contact(key=body["key"])
-    session.add(contact)
-    session.commit()
+    try:
+        session.add(contact)
+        session.commit()
+    except IntegrityError as e:
+        app.logger.info("%s already exists in the databse: %s", body["key"], e)
+        response = {
+            "error": {
+                "code": 400,
+                "title": "IntegrityError",
+                "detail": f"'{body['key']}' has already been submitted",
+            }
+        }
+        return response, 400
     return Response(status=201)
 
 
