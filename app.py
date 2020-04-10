@@ -12,6 +12,7 @@ Contact graph API.
 import json
 import os
 from datetime import datetime
+import hashlib
 
 from sqlalchemy import Column, DateTime, String, create_engine, Integer
 from sqlalchemy.exc import IntegrityError
@@ -19,7 +20,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 from flask import Flask, Response, jsonify, request
-from marshmallow import Schema, ValidationError, fields
+from marshmallow import Schema, ValidationError, fields, validates_schema
 
 CONN_STRING = os.environ["DATABASE_URL"]
 db = create_engine(CONN_STRING)
@@ -31,11 +32,24 @@ app = Flask(__name__)
 Base = declarative_base()
 
 
+def validate_key_checksum_hash(key, checksum, hash):
+    if checksum != hashlib.sha256(key.encode("utf-8")).hexdigest():
+        raise ValidationError("checksum must be sha256(key)")
+    if hash != hashlib.sha256((key + checksum).encode("utf-8")).hexdigest():
+        raise ValidationError("hash must be sha256(key + checksum)")
+
+
 class PositiveSchema:
     class Request(Schema):
         key = fields.Str(required=True)
         hash = fields.Str(required=True)
         checksum = fields.Str(required=True)
+
+        @validates_schema
+        def validate_schema(self, data, **kwargs):
+            validate_key_checksum_hash(
+                data["key"], data["checksum"], data["hash"]
+            )
 
 
 class ContactSchema(Schema):
@@ -43,6 +57,12 @@ class ContactSchema(Schema):
         key = fields.Str(required=True)
         hash = fields.Str(required=True)
         checksum = fields.Str(required=True)
+
+        @validates_schema
+        def validate_schema(self, data, **kwargs):
+            validate_key_checksum_hash(
+                data["key"], data["checksum"], data["hash"]
+            )
 
 
 class Positive(Base):
