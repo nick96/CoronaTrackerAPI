@@ -13,7 +13,7 @@ import json
 import os
 from datetime import datetime
 
-from sqlalchemy import Column, String, create_engine
+from sqlalchemy import Column, DateTime, String, create_engine, Integer
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -49,21 +49,22 @@ class Positive(Base):
     """Table of keys that have tested positive."""
 
     __tablename__ = "positive"
-    key = Column(String, primary_key=True)
-    hash = Column(String)
-    checksum = Column(String)
+    id = Column(Integer, primary_key=True)
+    key = Column(String, unique=True)
+    hash = Column(String, unique=True)
+    checksum = Column(String, unique=True)
+    submitted_at = Column(DateTime, default=datetime.utcnow)
 
 
 class Contact(Base):
     """Table of keys that have been in contact with a positive case."""
 
     __tablename__ = "contact"
-    key = Column(String, primary_key=True)
-    hash = Column(String)
-    checksum = Column(String)
-
-
-Base.metadata.create_all(db)
+    id = Column(Integer, primary_key=True)
+    key = Column(String, unique=True)
+    hash = Column(String, unique=True)
+    checksum = Column(String, unique=True)
+    submitted_at = Column(DateTime, default=datetime.utcnow)
 
 
 @app.route("/positive", methods=["POST"])
