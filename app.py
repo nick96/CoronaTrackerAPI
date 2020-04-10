@@ -33,10 +33,12 @@ Base = declarative_base()
 
 
 def validate_key_checksum_hash(key, checksum, hash):
-    if checksum != hashlib.sha256(key.encode("utf-8")).hexdigest():
-        raise ValidationError("checksum must be sha256(key)")
-    if hash != hashlib.sha256((key + checksum).encode("utf-8")).hexdigest():
-        raise ValidationError("hash must be sha256(key + checksum)")
+    expected_checksum = hashlib.sha256(key.encode("utf-8")).hexdigest()
+    if checksum != expected_checksum:
+        raise ValidationError(f"checksum must be sha256(key). Got {checksum}, expected {expected_checksum}")
+    expected_hash = hashlib.sha256((key + checksum).encode("utf-8")).hexdigest()
+    if hash != expected_hash:
+        raise ValidationError("hash must be sha256(key + checksum). Got {hash}, expected {expected_hash}")
 
 
 class PositiveSchema:
@@ -108,6 +110,7 @@ def create_positive():
         session.add(positive)
         session.commit()
     except IntegrityError as e:
+        session.rollback()
         app.logger.info("%s already exists in the databse: %s", body["key"], e)
         response = {
             "error": {
@@ -148,6 +151,7 @@ def create_contact():
         session.add(contact)
         session.commit()
     except IntegrityError as e:
+        session.rollback()
         app.logger.info("%s already exists in the databse: %s", body["key"], e)
         response = {
             "error": {
