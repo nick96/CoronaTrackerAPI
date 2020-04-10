@@ -20,9 +20,11 @@ def before_each():
     session.query(Contact).delete()
 
 
-@pytest.mark.parametrize("url", ("/positive", "/create"))
-def test_create(url, client):
-    key = str(uuid.uuid4)
+@pytest.mark.parametrize(
+    ("url", "model"), (("/positive", Positive), ("/contact", Contact))
+)
+def test_create(url, model, client):
+    key = str(uuid.uuid4())
     checksum = hashlib.sha256(key.encode("utf-8")).hexdigest()
     hash = hashlib.sha256((key + checksum).encode("utf-8")).hexdigest()
     rv = client.post(
@@ -31,15 +33,14 @@ def test_create(url, client):
         headers={"Content-Type": "application/json"},
     )
     assert rv.status_code == 201, rv.data
-    _, key, hash, checksum = session.query(
-        Positive, Positive.key, Positive.hash, Positive.checksum
-    ).one()
-    assert key == "test"
-    assert hash == "test"
-    assert checksum == "test"
+    query = session.query(model, model.key, model.hash, model.checksum)
+    _, retrieved_key, retrieved_hash, retrieved_checksum = query.one()
+    assert retrieved_key == key, rv.json
+    assert retrieved_hash == hash, rv.json
+    assert retrieved_checksum == checksum, rv.json
 
 
-@pytest.mark.parametrize("url", ("/positive", "/create"))
+@pytest.mark.parametrize("url", ("/positive", "/contact"))
 def test_get(url, client):
     random_keys = [str(uuid.uuid4()) for _ in range(10)]
 
@@ -57,7 +58,7 @@ def test_get(url, client):
         )
         assert rv.status_code == 201, rv.data
 
-    rv = client.get("/positive")
+    rv = client.get(url)
     assert rv.status_code == 200
     stored_keys = rv.json
-    assert sorted(stored_keys) == sorted(random_keys)
+    assert sorted(stored_keys) == sorted(random_keys), rv.data
